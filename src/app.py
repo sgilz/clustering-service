@@ -9,6 +9,7 @@ import numpy as np
 #Imported objects from testing env
 scaler = None
 model = None
+states = {0:"stability", 1:"affection", 2:"improvement"}
 
 def load_objects():
     global model, scaler
@@ -45,14 +46,19 @@ def get_prediction():
             values = list(entry.values())
             datapoint = np.array(values)[np.newaxis, :]  # converts shape from (4,) to (1, 4)
             scaler.transform(datapoint) # scaling data to fit the training limits 
-            prediction = model.predict(datapoint)  # runs globally loaded model on the data
-            response = jsonify({"cluster": int(prediction[0])})
+            prediction = int(model.predict(datapoint)[0])  # runs globally loaded model on the data
+            response = jsonify({
+                "cluster": prediction,
+                "state": states[prediction]})
             return response
-        raise InvalidUsage("Unprocessable entity", 422)        
+        raise InvalidUsage("""
+Unprocessable entity, 
+check all the required fields are present and comply with the rules.
+Contact admin for more info.
+""", 422)
     raise InvalidUsage("Method Not Allowed", 405)
 
 
 if __name__ == '__main__':
     load_objects()  # load model at the beginning once only
-    #app.run(host='0.0.0.0', port=80)
-    app.run(host='127.0.0.1', port=8080)
+    app.run(host='0.0.0.0', port=8080)
